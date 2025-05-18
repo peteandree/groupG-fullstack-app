@@ -4,7 +4,7 @@ A full-stack application for managing employee information, department details, 
 
 ### Database Connection Url
 ```
-PGPASSWORD=lMhbiVLYaGGbZQxcWKYDVIJxOrWYAdHm psql -h ballast.proxy.rlwy.net -U postgres -p 53905 -d railway
+psql PGPASSWORD=lMhbiVLYaGGbZQxcWKYDVIJxOrWYAdHm psql -h ballast.proxy.rlwy.net -U postgres -p 53905 -d railway
 ```
 
 ## Table of Contents
