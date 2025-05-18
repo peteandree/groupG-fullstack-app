@@ -288,7 +288,7 @@ function basicDetails(account) {
 async function sendVerificationEmail(account, origin) {
     let message;
     if (origin) {
-        const verifyUrl = ${origin}/account/verify-email?token=${account.verificationToken};
+        const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
         message = `<p>Please click the below link to verify your email address:</p>
                     <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
     } else {
@@ -327,7 +327,7 @@ async function sendAlreadyRegisteredEmail(email, origin) {
 async function sendPasswordResetEmail(account, origin) {
     let message;
     if (origin) {
-        const resetUrl = ${origin}/account/reset-password?token=${account.resetToken};
+        const resetUrl = `${origin}/account/reset-password?token=${account.resetToken}`;
         message = `<p>Please click the link below to reset your password, the link will be valid for 1 day:</p>
                     <p><a href="${resetUrl}">${resetUrl}</a></p>`;
     } else {
