@@ -42,38 +42,6 @@ async function authenticate({ email, password, ipAddress }) {
         throw 'Account is not verified.';
     }
 
-    // authentication successful so generate jwt and refresh tokens
-    const jwtToken = generateJwtToken(account);
-    const refreshToken = generateRefreshToken(account, ipAddress);
-
-    // save refresh token
-    await refreshToken.save();
-
-    // return basic details and tokens
-    return {
-        ...basicDetails(account),
-        jwtToken,
-        refreshToken: refreshToken.token
-    };
-}
-
-async function authenticate({ email, password, ipAddress }) {
-    const account = await db.Account.scope('withHash').findOne({ where: { email } });
-
-    // Check if account exists first
-    if (!account) {
-        throw 'Email does not exist';
-    }
-
-    // Then verify password
-    if (!(await bcrypt.compare(password, account.passwordHash))) {
-        throw 'Password is incorrect';
-    }
-
-    if (!account.isVerified) {
-        throw 'Account is not verified.';
-    }
-
     if (account.status != 'active') {
         throw 'Account is not active. Please contact the administrator.'
     }
@@ -90,6 +58,29 @@ async function authenticate({ email, password, ipAddress }) {
         ...basicDetails(account),
         jwtToken,
         refreshToken: refreshToken.token
+    };
+}
+
+async function refreshToken({ token, ipAddress }) {
+    const refreshToken = await getRefreshToken(token);
+    const account = await refreshToken.getAccount();
+
+    // replace old refresh token with a new one and save
+    const newRefreshToken = generateRefreshToken(account, ipAddress);
+    refreshToken.revoked = Date.now();
+    refreshToken.revokedByIp = ipAddress;
+    refreshToken.replacedByToken = newRefreshToken.token;
+    await refreshToken.save();
+    await newRefreshToken.save();
+
+    // generate new jwt
+    const jwtToken = generateJwtToken(account);
+
+    // return basic details and tokens
+    return {
+        ...basicDetails(account),
+        jwtToken,
+        refreshToken: newRefreshToken.token
     };
 }
 
@@ -297,7 +288,7 @@ function basicDetails(account) {
 async function sendVerificationEmail(account, origin) {
     let message;
     if (origin) {
-        const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
+        const verifyUrl = ${origin}/account/verify-email?token=${account.verificationToken};
         message = `<p>Please click the below link to verify your email address:</p>
                     <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
     } else {
@@ -336,7 +327,7 @@ async function sendAlreadyRegisteredEmail(email, origin) {
 async function sendPasswordResetEmail(account, origin) {
     let message;
     if (origin) {
-        const resetUrl = `${origin}/account/reset-password?token=${account.resetToken}`;
+        const resetUrl = ${origin}/account/reset-password?token=${account.resetToken};
         message = `<p>Please click the link below to reset your password, the link will be valid for 1 day:</p>
                     <p><a href="${resetUrl}">${resetUrl}</a></p>`;
     } else {
