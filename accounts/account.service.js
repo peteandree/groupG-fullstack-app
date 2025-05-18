@@ -57,26 +57,39 @@ async function authenticate({ email, password, ipAddress }) {
     };
 }
 
-async function refreshToken({ token, ipAddress }) {
-    const refreshToken = await getRefreshToken(token);
-    const account = await refreshToken.getAccount();
+async function authenticate({ email, password, ipAddress }) {
+    const account = await db.Account.scope('withHash').findOne({ where: { email } });
 
-    // replace old refresh token with a new one and save
-    const newRefreshToken = generateRefreshToken(account, ipAddress);
-    refreshToken.revoked = Date.now();
-    refreshToken.revokedByIp = ipAddress;
-    refreshToken.replacedByToken = newRefreshToken.token;
-    await refreshToken.save();
-    await newRefreshToken.save();
+    // Check if account exists first
+    if (!account) {
+        throw 'Email does not exist';
+    }
 
-    // generate new jwt
+    // Then verify password
+    if (!(await bcrypt.compare(password, account.passwordHash))) {
+        throw 'Password is incorrect';
+    }
+
+    if (!account.isVerified) {
+        throw 'Account is not verified.';
+    }
+
+    if (account.status != 'active') {
+        throw 'Account is not active. Please contact the administrator.'
+    }
+
+    // authentication successful so generate jwt and refresh tokens
     const jwtToken = generateJwtToken(account);
+    const refreshToken = generateRefreshToken(account, ipAddress);
+
+    // save refresh token
+    await refreshToken.save();
 
     // return basic details and tokens
     return {
         ...basicDetails(account),
         jwtToken,
-        refreshToken: newRefreshToken.token
+        refreshToken: refreshToken.token
     };
 }
 
